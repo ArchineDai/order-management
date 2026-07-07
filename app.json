@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "订单台账",
+    "slug": "order-management",
+    "version": "1.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.archie.ordermanagement",
+      "infoPlist": {
+        "NSCameraUsageDescription": "用于拍摄采购单、送货凭证和淘宝截图。",
+        "NSPhotoLibraryUsageDescription": "用于选择采购单、送货凭证和淘宝截图。"
+      }
+    },
+    "android": {
+      "package": "com.archie.ordermanagement",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#034d4d"
+      },
+      "permissions": ["CAMERA", "READ_MEDIA_IMAGES"]
+    },
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#034d4d"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "用于选择采购单、送货凭证和淘宝截图。",
+          "cameraPermission": "用于拍摄采购单、送货凭证和淘宝截图。"
+        }
+      ]
+    ]
+  }
+}
