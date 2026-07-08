@@ -2,12 +2,14 @@
   "expo": {
     "name": "订单台账",
     "slug": "order-management",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.archie.ordermanagement",
@@ -22,7 +24,10 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#034d4d"
       },
-      "permissions": ["CAMERA", "READ_MEDIA_IMAGES"]
+      "permissions": [
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
+      ]
     },
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -36,7 +41,10 @@
           "photosPermission": "用于选择采购单、送货凭证和淘宝截图。",
           "cameraPermission": "用于拍摄采购单、送货凭证和淘宝截图。"
         }
-      ]
+      ],
+      "expo-document-picker",
+      "expo-router",
+      "expo-status-bar"
     ]
   }
 }

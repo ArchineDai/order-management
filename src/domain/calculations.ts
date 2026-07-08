@@ -4,6 +4,7 @@ import {
   Order,
   OrderLine,
   OrderLineStatus,
+  ProfitStatistics,
   ProfitSummary,
   SearchResult
 } from "./types";
@@ -190,6 +191,56 @@ export function calculateProfitSummary(orders: Order[]): ProfitSummary {
   };
 }
 
+export function calculateProfitStatistics(orders: Order[], referenceDate: string | Date = new Date()): ProfitStatistics {
+  const summary = calculateProfitSummary(orders);
+  const currentMonth = monthKey(referenceDate);
+  const monthlyRows = new Map<string, { orderCount: number; salesTotal: number; purchaseTotal: number }>();
+  let currentMonthOrderCount = 0;
+  let currentMonthProfit = 0;
+
+  for (const order of orders) {
+    const orderMonth = monthKey(order.orderDate);
+    const salesTotal = money(order.lines.reduce((total, line) => total + safeNumber(line.taxIncludedTotal), 0));
+    const purchaseCost = money(order.lines.reduce((total, line) => total + purchaseTotal(line), 0));
+    const profit = money(salesTotal - purchaseCost);
+
+    if (orderMonth) {
+      const current = monthlyRows.get(orderMonth) ?? { orderCount: 0, salesTotal: 0, purchaseTotal: 0 };
+      current.orderCount += 1;
+      current.salesTotal = money(current.salesTotal + salesTotal);
+      current.purchaseTotal = money(current.purchaseTotal + purchaseCost);
+      monthlyRows.set(orderMonth, current);
+    }
+
+    if (orderMonth === currentMonth) {
+      currentMonthOrderCount += 1;
+      currentMonthProfit = money(currentMonthProfit + profit);
+    }
+  }
+
+  const monthlyTrend = Array.from(monthlyRows.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, row]) => ({
+      month,
+      orderCount: row.orderCount,
+      salesTotal: money(row.salesTotal),
+      purchaseTotal: money(row.purchaseTotal),
+      grossProfit: money(row.salesTotal - row.purchaseTotal)
+    }));
+
+  return {
+    ...summary,
+    totalOrderCount: orders.length,
+    purchaseCost: summary.purchaseTotal,
+    totalProfit: summary.grossProfit,
+    currentMonthOrderCount,
+    currentMonthProfit,
+    monthlySalesTrend: monthlyTrend.map(({ month, salesTotal }) => ({ month, salesTotal })),
+    monthlyProfitTrend: monthlyTrend.map(({ month, grossProfit }) => ({ month, grossProfit })),
+    monthlyTrend
+  };
+}
+
 function normalize(value: string | undefined): string {
   return (value ?? "").trim().toLowerCase();
 }
@@ -200,4 +251,12 @@ function safeNumber(value: number): number {
 
 function safeRatio(value: number): number {
   return Number.isFinite(value) && value > 0 ? value : 1;
+}
+
+function monthKey(value: string | Date): string {
+  if (value instanceof Date) return value.toISOString().slice(0, 7);
+  const normalized = value.trim();
+  const match = normalized.match(/^(\d{4})[-/.年](\d{1,2})/);
+  if (!match) return "";
+  return `${match[1]}-${match[2].padStart(2, "0")}`;
 }
