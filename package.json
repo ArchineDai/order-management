@@ -1,8 +1,8 @@
 {
   "name": "order-management",
   "private": true,
-  "version": "1.1.0",
-  "main": "expo/AppEntry.js",
+  "version": "1.2.0",
+  "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -15,15 +15,22 @@
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "57.0.3",
+    "expo-constants": "~57.0.3",
+    "expo-document-picker": "~57.0.0",
     "expo-file-system": "^57.0.0",
     "expo-image-picker": "^57.0.2",
+    "expo-linking": "~57.0.2",
+    "expo-router": "~57.0.4",
     "expo-sharing": "^57.0.3",
-    "expo-text-extractor": "^2.0.0",
-    "lucide-react-native": "^0.468.0",
+    "expo-status-bar": "~57.0.0",
+    "lucide-react-native": "^1.23.0",
     "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-native": "0.86.0",
     "react-native-safe-area-context": "~5.7.0",
-    "react-native-svg": "15.15.4"
+    "react-native-screens": "4.25.2",
+    "react-native-svg": "15.15.4",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",

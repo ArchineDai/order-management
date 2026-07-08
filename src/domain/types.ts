@@ -29,6 +29,7 @@ export interface PurchaseRecord {
   purchaseUnitPrice: number;
   purchaseTotal: number;
   invoiceNeeded: InvoiceNeeded;
+  invoiceReceivedAt?: string;
   conversionRatioToOrderUnit: number;
   note?: string;
   attachment?: Attachment;
@@ -52,6 +53,7 @@ export interface Order {
   companyName: string;
   customerPoNo?: string;
   orderDate: string;
+  completedAt?: string;
   sourceImage?: Attachment;
   note?: string;
   lines: OrderLine[];
@@ -153,4 +155,40 @@ export interface ProfitSummary {
   purchaseTotal: number;
   grossProfit: number;
   grossMarginRate: number;
+}
+
+export interface BomComponent {
+  id: string;
+  materialName: string;
+  specModel: string;
+  quantity: number;
+}
+
+export interface BomItem {
+  id: string;
+  finishedMaterialName: string;
+  finishedSpecModel: string;
+  finishedPurchaseCost: number;
+  components: BomComponent[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MonthlyProfitPoint {
+  month: string;
+  orderCount: number;
+  salesTotal: number;
+  purchaseTotal: number;
+  grossProfit: number;
+}
+
+export interface ProfitStatistics extends ProfitSummary {
+  totalOrderCount: number;
+  purchaseCost: number;
+  totalProfit: number;
+  currentMonthOrderCount: number;
+  currentMonthProfit: number;
+  monthlySalesTrend: Array<Pick<MonthlyProfitPoint, "month" | "salesTotal">>;
+  monthlyProfitTrend: Array<Pick<MonthlyProfitPoint, "month" | "grossProfit">>;
+  monthlyTrend: MonthlyProfitPoint[];
 }

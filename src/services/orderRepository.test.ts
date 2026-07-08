@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createOrderRepository, KeyValueStorage } from "./orderRepository";
+import { createBomRepository, createOrderRepository, KeyValueStorage } from "./orderRepository";
 import { createSampleOrders } from "../domain/testFixtures";
+import { BomItem } from "../domain/types";
 
 function createMemoryStorage(): KeyValueStorage {
   const values = new Map<string, string>();
@@ -38,5 +39,28 @@ describe("order repository", () => {
     await repository.clear();
 
     await expect(repository.load()).resolves.toEqual([]);
+  });
+
+  it("persists BOM items independently from orders", async () => {
+    const storage = createMemoryStorage();
+    const orderRepository = createOrderRepository(storage);
+    const bomRepository = createBomRepository(storage);
+    const bomItems: BomItem[] = [
+      {
+        id: "bom-1",
+        finishedMaterialName: "控制箱",
+        finishedSpecModel: "BOX-1",
+        finishedPurchaseCost: 88,
+        components: [{ id: "component-1", materialName: "轴承", specModel: "AB-12", quantity: 2 }],
+        createdAt: "2026-07-08T00:00:00.000Z",
+        updatedAt: "2026-07-08T00:00:00.000Z"
+      }
+    ];
+
+    await orderRepository.save(createSampleOrders());
+    await bomRepository.save(bomItems);
+
+    await expect(bomRepository.load()).resolves.toEqual(bomItems);
+    await expect(orderRepository.load()).resolves.toHaveLength(2);
   });
 });

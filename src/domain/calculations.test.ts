@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildInventoryRows,
+  calculateProfitStatistics,
   calculateProfitSummary,
   detectDuplicateOrder,
   searchHistory,
@@ -83,5 +84,35 @@ describe("order calculations", () => {
     expect(summary.purchaseTotal).toBe(1250);
     expect(summary.grossProfit).toBe(1650);
     expect(summary.grossMarginRate).toBeCloseTo(1650 / 2900, 5);
+  });
+
+  it("calculates total and current-month profit statistics with monthly trends", () => {
+    const juneOrder = createSampleOrder({
+      companyName: "苏州晨光制造有限公司",
+      orderDate: "2026-06-28",
+      lineQuantity: 40,
+      unitPrice: 30,
+      total: 1200,
+      purchases: [{ quantity: 40, total: 700, ratio: 1, spec: "CD-20 单只", unitPrice: 17.5 }]
+    });
+
+    const statistics = calculateProfitStatistics([...createSampleOrders(), juneOrder], "2026-07-08");
+
+    expect(statistics).toMatchObject({
+      totalOrderCount: 3,
+      salesTotal: 4100,
+      purchaseCost: 1950,
+      totalProfit: 2150,
+      currentMonthOrderCount: 2,
+      currentMonthProfit: 1650
+    });
+    expect(statistics.monthlySalesTrend).toEqual([
+      { month: "2026-06", salesTotal: 1200 },
+      { month: "2026-07", salesTotal: 2900 }
+    ]);
+    expect(statistics.monthlyProfitTrend).toEqual([
+      { month: "2026-06", grossProfit: 500 },
+      { month: "2026-07", grossProfit: 1650 }
+    ]);
   });
 });
