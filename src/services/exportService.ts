@@ -2,12 +2,13 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { buildCsvExports } from "../domain/csv";
 import { Order } from "../domain/types";
+import { translate } from "../i18n";
 
 export async function exportOrdersAsCsv(orders: Order[]): Promise<string[]> {
   const bundle = buildCsvExports(orders);
   const directory = FileSystem.documentDirectory;
   if (!directory) {
-    throw new Error("当前设备没有可写入的文档目录。");
+    throw new Error(translate("alerts.noWritableDirectory"));
   }
 
   const files = await Promise.all(
@@ -21,7 +22,7 @@ export async function exportOrdersAsCsv(orders: Order[]): Promise<string[]> {
   if (files[0] && (await Sharing.isAvailableAsync())) {
     await Sharing.shareAsync(files[0], {
       mimeType: "text/csv",
-      dialogTitle: "导出订单 CSV"
+      dialogTitle: translate("alerts.exportDialogTitle")
     });
   }
 

@@ -45,7 +45,7 @@ export function createSampleOrder(options: SampleOrderOptions = {}): Order {
         })),
         purchases: (options.purchases ?? []).map<PurchaseRecord>((purchase, index) => ({
           id: nextId("purchase"),
-          supplierName: index === 0 ? "淘宝五金旗舰店" : "本地供应商",
+          supplierName: index === 0 ? "线上五金供应商" : "本地供应商",
           taobaoOrderNo: `TB${idCounter}${index}`,
           purchaseDate: index === 0 ? "2026-07-02" : "2026-07-04",
           purchaseSpec: purchase.spec ?? "AB-12 单只",

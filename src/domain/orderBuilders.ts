@@ -209,7 +209,7 @@ export function updatePurchaseRecord(
             attachment: input.attachmentUri
               ? {
                   id: purchase.attachment?.id ?? makeId("att"),
-                  name: purchase.attachment?.name ?? "淘宝截图",
+                  name: purchase.attachment?.name ?? "买入凭证",
                   dataUrl: input.attachmentUri,
                   createdAt: purchase.attachment?.createdAt ?? new Date().toISOString()
                 }
@@ -368,7 +368,7 @@ function buildPurchaseRecord(input: NewPurchaseInput, existing?: PurchaseRecord)
     attachment: input.attachmentUri
       ? {
           id: existing?.attachment?.id ?? makeId("att"),
-          name: existing?.attachment?.name ?? "淘宝截图",
+          name: existing?.attachment?.name ?? "买入凭证",
           dataUrl: input.attachmentUri,
           createdAt: existing?.attachment?.createdAt ?? new Date().toISOString()
         }
