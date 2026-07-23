@@ -63,7 +63,7 @@ export function buildCsvExports(orders: Order[]): CsvExportBundle {
     purchases: {
       filename: "purchases.csv",
       content: toCsv(
-        ["订单编号", "客户公司", "规格型号", "供应商/店铺", "淘宝订单号", "买入日期", "买入规格", "买入数量", "买入单位", "买入单价", "买入总价", "是否需要采购发票", "换算比例"],
+        ["订单编号", "客户公司", "规格型号", "供应商/店铺", "供应商订单号", "买入日期", "买入规格", "买入数量", "买入单位", "买入单价", "买入总价", "是否需要采购发票", "换算比例"],
         orders.flatMap((order) =>
           order.lines.flatMap((line) =>
             line.purchases.map((purchase) => [

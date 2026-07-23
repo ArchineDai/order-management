@@ -1,0 +1,8 @@
+{
+  "app_name": "订单台账",
+  "ios": {
+    "CFBundleDisplayName": "订单台账",
+    "NSCameraUsageDescription": "用于拍摄采购单、送货凭证和买入凭证。",
+    "NSPhotoLibraryUsageDescription": "用于选择采购单、送货凭证和买入凭证。"
+  }
+}

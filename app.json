@@ -4,47 +4,60 @@
     "slug": "order-management",
     "version": "1.2.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo-rounded.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "assetBundlePatterns": [
       "**/*"
     ],
+    "locales": {
+      "zh-Hans": "./locales/zh-Hans.json",
+      "en": "./locales/en.json"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.archie.ordermanagement",
       "infoPlist": {
-        "NSCameraUsageDescription": "用于拍摄采购单、送货凭证和淘宝截图。",
-        "NSPhotoLibraryUsageDescription": "用于选择采购单、送货凭证和淘宝截图。"
+        "NSCameraUsageDescription": "用于拍摄采购单、送货凭证和买入凭证。",
+        "NSPhotoLibraryUsageDescription": "用于选择采购单、送货凭证和买入凭证。"
       }
     },
     "android": {
       "package": "com.archie.ordermanagement",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#034d4d"
+        "foregroundImage": "./assets/logo-rounded.png",
+        "backgroundColor": "#ffffff"
       },
       "permissions": [
         "CAMERA",
         "READ_MEDIA_IMAGES"
       ]
     },
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#034d4d"
-    },
     "plugins": [
       [
         "expo-image-picker",
         {
-          "photosPermission": "用于选择采购单、送货凭证和淘宝截图。",
-          "cameraPermission": "用于拍摄采购单、送货凭证和淘宝截图。"
+          "photosPermission": "用于选择采购单、送货凭证和买入凭证。",
+          "cameraPermission": "用于拍摄采购单、送货凭证和买入凭证。"
         }
       ],
       "expo-document-picker",
       "expo-router",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-localization",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ffffff",
+          "image": "./assets/splash-logo-rounded.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#ffffff",
+            "image": "./assets/splash-logo-rounded.png"
+          }
+        }
+      ]
     ]
   }
 }

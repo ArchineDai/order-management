@@ -4,6 +4,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { Archive, Camera, Plus, X } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import {
   addDeliveryToOrder,
   addPurchaseToLine,
@@ -130,6 +131,7 @@ type BomFormState = {
 };
 
 type WorkspaceContextValue = {
+  isReady: boolean;
   orders: Order[];
   bomItems: BomItem[];
   summaries: LineSummary[];
@@ -153,6 +155,8 @@ type WorkspaceContextValue = {
   exportCsv: () => Promise<void>;
   openImportEntry: () => Promise<void>;
 };
+
+type TranslateFn = (key: string, options?: Record<string, unknown>) => string;
 
 const OrderWorkspaceContext = createContext<WorkspaceContextValue | null>(null);
 
@@ -218,6 +222,8 @@ const emptyBomForm = (): BomFormState => ({
 });
 
 export function OrderWorkspaceProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
+  const [isReady, setIsReady] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [bomItems, setBomItems] = useState<BomItem[]>([]);
   const [orderModalOpen, setOrderModalOpen] = useState(false);
@@ -236,13 +242,21 @@ export function OrderWorkspaceProvider({ children }: { children: React.ReactNode
   const [editingPurchase, setEditingPurchase] = useState<EditingPurchase | null>(null);
 
   useEffect(() => {
-    orderRepository.load().then(setOrders).catch((error) => {
-      Alert.alert("读取失败", errorMessage(error));
+    let active = true;
+
+    void Promise.allSettled([orderRepository.load(), bomRepository.load()]).then(([ordersResult, bomResult]) => {
+      if (!active) return;
+      if (ordersResult.status === "fulfilled") setOrders(ordersResult.value);
+      else Alert.alert(t("alerts.readFailed"), errorMessage(ordersResult.reason, t));
+      if (bomResult.status === "fulfilled") setBomItems(bomResult.value);
+      else Alert.alert(t("alerts.bomReadFailed"), errorMessage(bomResult.reason, t));
+      setIsReady(true);
     });
-    bomRepository.load().then(setBomItems).catch((error) => {
-      Alert.alert("BOM 读取失败", errorMessage(error));
-    });
-  }, []);
+
+    return () => {
+      active = false;
+    };
+  }, [t]);
 
   const summaries = useMemo(() => summarizeOrders(orders), [orders]);
   const inventoryRows = useMemo(() => buildInventoryRows(orders), [orders]);
@@ -286,7 +300,7 @@ export function OrderWorkspaceProvider({ children }: { children: React.ReactNode
     };
     const errors = validateOrderInput(input);
     if (errors.length) {
-      Alert.alert("订单不能保存", errors.join("\n"));
+      Alert.alert(t("alerts.orderSaveFailed"), localizeValidationErrors(errors, t).join("\n"));
       return;
     }
 
@@ -301,9 +315,9 @@ export function OrderWorkspaceProvider({ children }: { children: React.ReactNode
     const newOrder = createOrder(input);
     const duplicates = detectDuplicateOrder(orders, newOrder);
     if (!force && duplicates.length > 0) {
-      Alert.alert("疑似重复订单", "同公司、同日期、同规格、同数量的订单已经存在。是否继续保存？", [
-        { text: "取消", style: "cancel" },
-        { text: "继续保存", onPress: () => void submitOrder(true) }
+      Alert.alert(t("alerts.duplicateOrderTitle"), t("alerts.duplicateOrderMessage"), [
+        { text: t("common.cancel"), style: "cancel" },
+        { text: t("alerts.continueSave"), onPress: () => void submitOrder(true) }
       ]);
       return;
     }
@@ -328,7 +342,7 @@ export function OrderWorkspaceProvider({ children }: { children: React.ReactNode
     };
     const errors = validateDeliveryInput(input);
     if (errors.length) {
-      Alert.alert("送货记录不能保存", errors.join("\n"));
+      Alert.alert(t("alerts.deliverySaveFailed"), localizeValidationErrors(errors, t).join("\n"));
       return;
     }
 
@@ -366,7 +380,7 @@ export function OrderWorkspaceProvider({ children }: { children: React.ReactNode
     };
     const errors = validatePurchaseInput(input);
     if (errors.length) {
-      Alert.alert("买入记录不能保存", errors.join("\n"));
+      Alert.alert(t("alerts.purchaseSaveFailed"), localizeValidationErrors(errors, t).join("\n"));
       return;
     }
 
@@ -387,7 +401,7 @@ export function OrderWorkspaceProvider({ children }: { children: React.ReactNode
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("没有权限", source === "camera" ? "需要相机权限才能拍照。" : "需要相册权限才能选择附件。");
+      Alert.alert(t("alerts.noPermission"), source === "camera" ? t("alerts.cameraPermissionRequired") : t("alerts.libraryPermissionRequired"));
       return undefined;
     }
 
@@ -415,9 +429,9 @@ export function OrderWorkspaceProvider({ children }: { children: React.ReactNode
   const exportCsv = async () => {
     try {
       const files = await exportOrdersAsCsv(orders);
-      Alert.alert("导出完成", `已生成 ${files.length} 个 CSV 文件。`);
+      Alert.alert(t("alerts.exportDone"), t("alerts.exportDoneMessage", { count: files.length }));
     } catch (error) {
-      Alert.alert("导出失败", errorMessage(error));
+      Alert.alert(t("alerts.exportFailed"), errorMessage(error, t));
     }
   };
 
@@ -449,24 +463,26 @@ export function OrderWorkspaceProvider({ children }: { children: React.ReactNode
         { defaultOrderDate: today(), defaultUnit: "个" }
       );
       if (!importedInputs.length) {
-        Alert.alert("导入失败", "文件中没有可导入的订单行。");
+        Alert.alert(t("alerts.importFailed"), t("alerts.noImportRows"));
         return;
       }
 
       const errors = importedInputs.flatMap((input, index) =>
-        validateOrderInput(input).map((message) => `第 ${index + 1} 个订单：${message}`)
+        validateOrderInput(input).map((message) =>
+          t("alerts.importedOrderPrefix", { number: index + 1, message: localizeValidationMessage(message, t) })
+        )
       );
       if (errors.length) {
-        Alert.alert("导入失败", errors.slice(0, 6).join("\n"));
+        Alert.alert(t("alerts.importFailed"), errors.slice(0, 6).join("\n"));
         return;
       }
 
       const importedOrders = importedInputs.map((input) => createOrder(input));
       const importedLineCount = importedOrders.reduce((total, order) => total + order.lines.length, 0);
       await saveOrders([...importedOrders, ...orders]);
-      Alert.alert("导入完成", `已生成 ${importedOrders.length} 个订单，${importedLineCount} 行物料。`);
+      Alert.alert(t("alerts.importDone"), t("alerts.importDoneMessage", { orders: importedOrders.length, lines: importedLineCount }));
     } catch (error) {
-      Alert.alert("导入失败", errorMessage(error));
+      Alert.alert(t("alerts.importFailed"), errorMessage(error, t));
     }
   };
 
@@ -553,16 +569,16 @@ export function OrderWorkspaceProvider({ children }: { children: React.ReactNode
   };
 
   const deleteOrder = (order: Order) => {
-    Alert.alert("删除订单", `确认删除 ${order.orderNo}？`, [
-      { text: "取消", style: "cancel" },
-      { text: "删除", style: "destructive", onPress: () => void saveOrders(removeOrder(orders, order.id)) }
+    Alert.alert(t("alerts.deleteOrder"), t("alerts.deleteOrderMessage", { orderNo: order.orderNo }), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("common.delete"), style: "destructive", onPress: () => void saveOrders(removeOrder(orders, order.id)) }
     ]);
   };
 
   const completeOrder = (order: Order) => {
-    Alert.alert("标记完成", `确认将 ${order.orderNo} 标记为已完成？`, [
-      { text: "取消", style: "cancel" },
-      { text: "完成", onPress: () => void saveOrders(markOrderCompleted(orders, order.id)) }
+    Alert.alert(t("alerts.markComplete"), t("alerts.markCompleteMessage", { orderNo: order.orderNo }), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("alerts.complete"), onPress: () => void saveOrders(markOrderCompleted(orders, order.id)) }
     ]);
   };
 
@@ -583,9 +599,9 @@ export function OrderWorkspaceProvider({ children }: { children: React.ReactNode
   };
 
   const deleteBom = (item: BomItem) => {
-    Alert.alert("删除 BOM", `确认删除 ${item.finishedMaterialName} / ${item.finishedSpecModel}？`, [
-      { text: "取消", style: "cancel" },
-      { text: "删除", style: "destructive", onPress: () => void saveBomItems(removeBomItem(bomItems, item.id)) }
+    Alert.alert(t("alerts.deleteBom"), t("alerts.deleteBomMessage", { name: item.finishedMaterialName, spec: item.finishedSpecModel }), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("common.delete"), style: "destructive", onPress: () => void saveBomItems(removeBomItem(bomItems, item.id)) }
     ]);
   };
 
@@ -597,21 +613,21 @@ export function OrderWorkspaceProvider({ children }: { children: React.ReactNode
       quantity: toNumber(component.quantity)
     }));
     const errors = [
-      !bomForm.finishedMaterialName.trim() && "成品物料名称不能为空",
-      !bomForm.finishedSpecModel.trim() && "成品规格型号不能为空",
-      toNumber(bomForm.finishedPurchaseCost) < 0 && "成品采购成本不能小于 0",
-      !components.length && "至少需要 1 个零部件",
+      !bomForm.finishedMaterialName.trim() && t("validation.finishedMaterialRequired"),
+      !bomForm.finishedSpecModel.trim() && t("validation.finishedSpecRequired"),
+      toNumber(bomForm.finishedPurchaseCost) < 0 && t("validation.finishedCostNonNegative"),
+      !components.length && t("validation.componentRequired"),
       ...components.flatMap((component, index) => {
-        const prefix = components.length > 1 ? `第 ${index + 1} 个零部件` : "零部件";
+        const prefix = components.length > 1 ? t("validation.componentPrefix", { number: index + 1 }) : t("validation.componentSinglePrefix");
         return [
-          !component.materialName.trim() && `${prefix}名称不能为空`,
-          !component.specModel.trim() && `${prefix}规格型号不能为空`,
-          component.quantity <= 0 && `${prefix}数量必须大于 0`
+          !component.materialName.trim() && t("validation.componentNameRequired", { prefix }),
+          !component.specModel.trim() && t("validation.componentSpecRequired", { prefix }),
+          component.quantity <= 0 && t("validation.componentQuantityRequired", { prefix })
         ].filter(Boolean) as string[];
       })
     ].filter(Boolean) as string[];
     if (errors.length) {
-      Alert.alert("BOM 不能保存", errors.join("\n"));
+      Alert.alert(t("alerts.bomSaveFailed"), errors.join("\n"));
       return;
     }
 
@@ -630,6 +646,7 @@ export function OrderWorkspaceProvider({ children }: { children: React.ReactNode
   };
 
   const value: WorkspaceContextValue = {
+    isReady,
     orders,
     bomItems,
     summaries,
@@ -738,29 +755,30 @@ function OrderModal(props: {
   onPick: (source: "camera" | "library") => void;
 }) {
   const { form, onChange } = props;
+  const { t } = useTranslation();
   const suggestions = (field: Parameters<typeof getAutocompleteSuggestions>[1], query: string) =>
     getAutocompleteSuggestions({ orders: props.orders, bomItems: props.bomItems }, field, query);
   return (
-    <FormModal open={props.open} title={props.editing ? "编辑订单" : "新建订单"} onClose={props.onClose}>
+    <FormModal open={props.open} title={props.editing ? t("forms.editOrder") : t("forms.newOrder")} onClose={props.onClose}>
       <ImportStrip
-        title="导入订单资料"
-        description="选择订单附件后可先进入台账表单，后续解析结果将落到这些字段。"
-        actionLabel="选择附件"
+        title={t("forms.importOrderTitle")}
+        description={t("forms.importOrderDescription")}
+        actionLabel={t("forms.chooseAttachment")}
         onPress={() => props.onPick("library")}
       />
       <Field
-        label="客户公司"
+        label={t("forms.companyName")}
         value={form.companyName}
         onChangeText={(value) => onChange({ ...form, companyName: value })}
         suggestions={suggestions("companyName", form.companyName)}
       />
-      <Field label="采购单号" value={form.customerPoNo} onChangeText={(value) => onChange({ ...form, customerPoNo: value })} />
-      <Field label="订单日期" value={form.orderDate} onChangeText={(value) => onChange({ ...form, orderDate: value })} placeholder="2026-07-07" />
-      <SectionTitle title="物料明细" />
+      <Field label={t("forms.customerPoNo")} value={form.customerPoNo} onChangeText={(value) => onChange({ ...form, customerPoNo: value })} />
+      <Field label={t("forms.orderDate")} value={form.orderDate} onChangeText={(value) => onChange({ ...form, orderDate: value })} placeholder="2026-07-07" />
+      <SectionTitle title={t("forms.materialDetails")} />
       {form.lines.map((line, index) => (
         <View key={line.id ?? index} style={styles.subCard}>
           <View style={styles.cardHeader}>
-            <Text style={styles.strong}>物料 {index + 1}</Text>
+            <Text style={styles.strong}>{t("orders.materialNumber", { number: index + 1 })}</Text>
             {form.lines.length > 1 ? (
               <Pressable
                 onPress={() => onChange({ ...form, lines: form.lines.filter((_, lineIndex) => lineIndex !== index) })}
@@ -771,40 +789,40 @@ function OrderModal(props: {
             ) : null}
           </View>
           <Field
-            label="物料名称"
+            label={t("forms.materialName")}
             value={line.materialName}
             onChangeText={(value) => onChange(updateOrderFormLine(form, index, { materialName: value }))}
             suggestions={suggestions("materialName", line.materialName)}
           />
           <Field
-            label="规格型号"
+            label={t("forms.specModel")}
             value={line.specModel}
             onChangeText={(value) => onChange(updateOrderFormLine(form, index, { specModel: value }))}
             suggestions={suggestions("specModel", line.specModel)}
           />
           <View style={styles.formGrid}>
-            <Field label="数量" value={line.quantity} onChangeText={(value) => onChange(updateOrderLineWithAutoTotal(form, index, { quantity: value }))} keyboardType="numeric" />
+            <Field label={t("forms.quantity")} value={line.quantity} onChangeText={(value) => onChange(updateOrderLineWithAutoTotal(form, index, { quantity: value }))} keyboardType="numeric" />
             <Field
-              label="单位"
+              label={t("forms.unit")}
               value={line.unit}
               onChangeText={(value) => onChange(updateOrderFormLine(form, index, { unit: value }))}
               suggestions={suggestions("purchaseUnit", line.unit)}
             />
           </View>
           <View style={styles.formGrid}>
-            <Field label="含税单价" value={line.taxIncludedUnitPrice} onChangeText={(value) => onChange(updateOrderLineWithAutoTotal(form, index, { taxIncludedUnitPrice: value }))} keyboardType="numeric" />
-            <Field label="价税合计" value={line.taxIncludedTotal} onChangeText={(value) => onChange(updateOrderFormLine(form, index, { taxIncludedTotal: value }))} keyboardType="numeric" />
+            <Field label={t("forms.taxIncludedUnitPrice")} value={line.taxIncludedUnitPrice} onChangeText={(value) => onChange(updateOrderLineWithAutoTotal(form, index, { taxIncludedUnitPrice: value }))} keyboardType="numeric" />
+            <Field label={t("forms.taxIncludedTotal")} value={line.taxIncludedTotal} onChangeText={(value) => onChange(updateOrderFormLine(form, index, { taxIncludedTotal: value }))} keyboardType="numeric" />
           </View>
         </View>
       ))}
-      <SmallButton icon={<Plus color={colors.ink} size={16} />} label="增加物料" onPress={() => onChange({ ...form, lines: [...form.lines, emptyOrderLineForm()] })} />
-      <Field label="备注" value={form.note} onChangeText={(value) => onChange({ ...form, note: value })} multiline />
+      <SmallButton icon={<Plus color={colors.ink} size={16} />} label={t("forms.addMaterial")} onPress={() => onChange({ ...form, lines: [...form.lines, emptyOrderLineForm()] })} />
+      <Field label={t("forms.note")} value={form.note} onChangeText={(value) => onChange({ ...form, note: value })} multiline />
       {form.sourceImageUri ? <Image source={{ uri: form.sourceImageUri }} style={styles.formImage} /> : null}
       <View style={styles.actionRow}>
-        <SmallButton icon={<Camera color={colors.ink} size={16} />} label="拍照附件" onPress={() => props.onPick("camera")} />
-        <SmallButton icon={<Archive color={colors.ink} size={16} />} label="选择附件" onPress={() => props.onPick("library")} />
+        <SmallButton icon={<Camera color={colors.ink} size={16} />} label={t("forms.takePhoto")} onPress={() => props.onPick("camera")} />
+        <SmallButton icon={<Archive color={colors.ink} size={16} />} label={t("forms.chooseAttachment")} onPress={() => props.onPick("library")} />
       </View>
-      <PrimaryButton label={props.editing ? "保存修改" : "保存订单"} onPress={props.onSubmit} />
+      <PrimaryButton label={props.editing ? t("common.saveChanges") : t("forms.saveOrder")} onPress={props.onSubmit} />
     </FormModal>
   );
 }
@@ -819,25 +837,26 @@ function DeliveryModal(props: {
   onSubmit: () => void;
 }) {
   const { form, onChange } = props;
+  const { t } = useTranslation();
   return (
-    <FormModal open={props.open} title={props.editing ? "编辑送货" : "新增送货"} onClose={props.onClose}>
+    <FormModal open={props.open} title={props.editing ? t("forms.editDelivery") : t("forms.newDelivery")} onClose={props.onClose}>
       {props.target ? (
         <Text style={styles.formTarget}>
           {props.target.order.companyName}
-          {props.target.line ? ` / ${props.target.line.specModel}` : " / 多物料送货单"}
+          {props.target.line ? ` / ${props.target.line.specModel}` : ` / ${t("forms.multiMaterialDelivery")}`}
         </Text>
       ) : null}
-      <Field label="快递公司" value={form.courierCompany} onChangeText={(value) => onChange({ ...form, courierCompany: value })} />
-      <Field label="快递单号" value={form.trackingNo} onChangeText={(value) => onChange({ ...form, trackingNo: value })} />
-      <Field label="发货日期" value={form.shipDate} onChangeText={(value) => onChange({ ...form, shipDate: value })} placeholder="2026-07-07" />
-      <SectionTitle title="送货明细" />
+      <Field label={t("forms.courierCompany")} value={form.courierCompany} onChangeText={(value) => onChange({ ...form, courierCompany: value })} />
+      <Field label={t("forms.trackingNo")} value={form.trackingNo} onChangeText={(value) => onChange({ ...form, trackingNo: value })} />
+      <Field label={t("forms.shipDate")} value={form.shipDate} onChangeText={(value) => onChange({ ...form, shipDate: value })} placeholder="2026-07-07" />
+      <SectionTitle title={t("forms.deliveryDetails")} />
       {form.lines.map((line, index) => (
         <View key={line.lineId} style={styles.subCard}>
           <Text style={styles.strong}>
             {line.materialName} / {line.specModel}
           </Text>
           <Field
-            label={`送货数量（${line.unit}）`}
+            label={t("forms.deliveryQuantityWithUnit", { unit: line.unit })}
             value={line.quantity}
             onChangeText={(value) =>
               onChange({
@@ -851,8 +870,8 @@ function DeliveryModal(props: {
           />
         </View>
       ))}
-      <Field label="备注" value={form.note} onChangeText={(value) => onChange({ ...form, note: value })} multiline />
-      <PrimaryButton label={props.editing ? "保存修改" : "保存送货记录"} onPress={props.onSubmit} />
+      <Field label={t("forms.note")} value={form.note} onChangeText={(value) => onChange({ ...form, note: value })} multiline />
+      <PrimaryButton label={props.editing ? t("common.saveChanges") : t("forms.saveDelivery")} onPress={props.onSubmit} />
     </FormModal>
   );
 }
@@ -870,45 +889,46 @@ function PurchaseModal(props: {
   onPick: (source: "camera" | "library") => void;
 }) {
   const { form, onChange } = props;
+  const { t } = useTranslation();
   const suggestions = (field: Parameters<typeof getAutocompleteSuggestions>[1], query: string) =>
     getAutocompleteSuggestions({ orders: props.orders, bomItems: props.bomItems }, field, query);
   return (
-    <FormModal open={props.open} title={props.editing ? "编辑买入" : "新增买入"} onClose={props.onClose}>
+    <FormModal open={props.open} title={props.editing ? t("forms.editPurchase") : t("forms.newPurchase")} onClose={props.onClose}>
       {props.target ? <Text style={styles.formTarget}>{props.target.order.companyName} / {props.target.line.specModel}</Text> : null}
       <ImportStrip
-        title="导入买入资料"
-        description="选择供应商订单或付款凭证附件，明细字段可继续手工校正。"
-        actionLabel="选择凭证"
+        title={t("forms.importPurchaseTitle")}
+        description={t("forms.importPurchaseDescription")}
+        actionLabel={t("forms.chooseProof")}
         onPress={() => props.onPick("library")}
       />
       <Field
-        label="供应商/店铺"
+        label={t("forms.supplier")}
         value={form.supplierName}
         onChangeText={(value) => onChange({ ...form, supplierName: value })}
         suggestions={suggestions("supplierName", form.supplierName)}
       />
-      <Field label="淘宝订单号" value={form.taobaoOrderNo} onChangeText={(value) => onChange({ ...form, taobaoOrderNo: value })} />
-      <Field label="买入日期" value={form.purchaseDate} onChangeText={(value) => onChange({ ...form, purchaseDate: value })} />
+      <Field label={t("forms.supplierOrderNo")} value={form.taobaoOrderNo} onChangeText={(value) => onChange({ ...form, taobaoOrderNo: value })} />
+      <Field label={t("forms.purchaseDate")} value={form.purchaseDate} onChangeText={(value) => onChange({ ...form, purchaseDate: value })} />
       <Field
-        label="买入规格"
+        label={t("forms.purchaseSpec")}
         value={form.purchaseSpec}
         onChangeText={(value) => onChange({ ...form, purchaseSpec: value })}
         suggestions={suggestions("purchaseSpec", form.purchaseSpec)}
       />
       <View style={styles.formGrid}>
-        <Field label="买入数量" value={form.purchaseQuantity} onChangeText={(value) => onChange(updatePurchaseWithAutoTotal(form, { purchaseQuantity: value }))} keyboardType="numeric" />
+        <Field label={t("forms.purchaseQuantity")} value={form.purchaseQuantity} onChangeText={(value) => onChange(updatePurchaseWithAutoTotal(form, { purchaseQuantity: value }))} keyboardType="numeric" />
         <Field
-          label="买入单位"
+          label={t("forms.purchaseUnit")}
           value={form.purchaseUnit}
           onChangeText={(value) => onChange({ ...form, purchaseUnit: value })}
           suggestions={suggestions("purchaseUnit", form.purchaseUnit)}
         />
       </View>
       <View style={styles.formGrid}>
-        <Field label="买入单价" value={form.purchaseUnitPrice} onChangeText={(value) => onChange(updatePurchaseWithAutoTotal(form, { purchaseUnitPrice: value }))} keyboardType="numeric" />
-        <Field label="买入总价" value={form.purchaseTotal} onChangeText={(value) => onChange({ ...form, purchaseTotal: value })} keyboardType="numeric" />
+        <Field label={t("forms.purchaseUnitPrice")} value={form.purchaseUnitPrice} onChangeText={(value) => onChange(updatePurchaseWithAutoTotal(form, { purchaseUnitPrice: value }))} keyboardType="numeric" />
+        <Field label={t("forms.purchaseTotal")} value={form.purchaseTotal} onChangeText={(value) => onChange({ ...form, purchaseTotal: value })} keyboardType="numeric" />
       </View>
-      <Field label="换算比例" value={form.conversionRatioToOrderUnit} onChangeText={(value) => onChange({ ...form, conversionRatioToOrderUnit: value })} keyboardType="numeric" />
+      <Field label={t("forms.conversionRatio")} value={form.conversionRatioToOrderUnit} onChangeText={(value) => onChange({ ...form, conversionRatioToOrderUnit: value })} keyboardType="numeric" />
       <View style={styles.segmented}>
         {(["yes", "no"] as const).map((value) => (
           <Pressable key={value} onPress={() => onChange({ ...form, invoiceNeeded: value })} style={[styles.segment, form.invoiceNeeded === value && styles.activeSegment]}>
@@ -916,13 +936,13 @@ function PurchaseModal(props: {
           </Pressable>
         ))}
       </View>
-      <Field label="备注" value={form.note} onChangeText={(value) => onChange({ ...form, note: value })} multiline />
+      <Field label={t("forms.note")} value={form.note} onChangeText={(value) => onChange({ ...form, note: value })} multiline />
       {form.attachmentUri ? <Image source={{ uri: form.attachmentUri }} style={styles.formImage} /> : null}
       <View style={styles.actionRow}>
-        <SmallButton icon={<Camera color={colors.ink} size={16} />} label="拍照凭证" onPress={() => props.onPick("camera")} />
-        <SmallButton icon={<Archive color={colors.ink} size={16} />} label="选择凭证" onPress={() => props.onPick("library")} />
+        <SmallButton icon={<Camera color={colors.ink} size={16} />} label={t("forms.takeProofPhoto")} onPress={() => props.onPick("camera")} />
+        <SmallButton icon={<Archive color={colors.ink} size={16} />} label={t("forms.chooseProof")} onPress={() => props.onPick("library")} />
       </View>
-      <PrimaryButton label={props.editing ? "保存修改" : "保存买入记录"} onPress={props.onSubmit} />
+      <PrimaryButton label={props.editing ? t("common.saveChanges") : t("forms.savePurchase")} onPress={props.onSubmit} />
     </FormModal>
   );
 }
@@ -938,34 +958,35 @@ function BomModal(props: {
   onSubmit: () => void;
 }) {
   const { form, onChange } = props;
+  const { t } = useTranslation();
   const suggestions = (field: Parameters<typeof getAutocompleteSuggestions>[1], query: string) =>
     getAutocompleteSuggestions({ orders: props.orders, bomItems: props.bomItems }, field, query);
 
   return (
-    <FormModal open={props.open} title={props.editing ? "编辑 BOM" : "新增 BOM"} onClose={props.onClose}>
+    <FormModal open={props.open} title={props.editing ? t("forms.editBom") : t("forms.newBom")} onClose={props.onClose}>
       <Field
-        label="成品物料名称"
+        label={t("forms.finishedMaterialName")}
         value={form.finishedMaterialName}
         onChangeText={(value) => onChange({ ...form, finishedMaterialName: value })}
         suggestions={suggestions("materialName", form.finishedMaterialName)}
       />
       <Field
-        label="成品规格型号"
+        label={t("forms.finishedSpecModel")}
         value={form.finishedSpecModel}
         onChangeText={(value) => onChange({ ...form, finishedSpecModel: value })}
         suggestions={suggestions("specModel", form.finishedSpecModel)}
       />
       <Field
-        label="成品采购成本"
+        label={t("forms.finishedPurchaseCost")}
         value={form.finishedPurchaseCost}
         onChangeText={(value) => onChange({ ...form, finishedPurchaseCost: value })}
         keyboardType="numeric"
       />
-      <SectionTitle title="下级零部件" />
+      <SectionTitle title={t("forms.childComponents")} />
       {form.components.map((component, index) => (
         <View key={component.id ?? index} style={styles.subCard}>
           <View style={styles.cardHeader}>
-            <Text style={styles.strong}>零部件 {index + 1}</Text>
+            <Text style={styles.strong}>{t("bom.componentNumber", { number: index + 1 })}</Text>
             {form.components.length > 1 ? (
               <Pressable
                 onPress={() => onChange({ ...form, components: form.components.filter((_, componentIndex) => componentIndex !== index) })}
@@ -976,27 +997,27 @@ function BomModal(props: {
             ) : null}
           </View>
           <Field
-            label="零部件名称"
+            label={t("forms.componentName")}
             value={component.materialName}
             onChangeText={(value) => onChange(updateBomComponent(form, index, { materialName: value }))}
             suggestions={suggestions("materialName", component.materialName)}
           />
           <Field
-            label="零部件规格型号"
+            label={t("forms.componentSpecModel")}
             value={component.specModel}
             onChangeText={(value) => onChange(updateBomComponent(form, index, { specModel: value }))}
             suggestions={suggestions("specModel", component.specModel)}
           />
           <Field
-            label="数量"
+            label={t("forms.quantity")}
             value={component.quantity}
             onChangeText={(value) => onChange(updateBomComponent(form, index, { quantity: value }))}
             keyboardType="numeric"
           />
         </View>
       ))}
-      <SmallButton icon={<Plus color={colors.ink} size={16} />} label="增加零部件" onPress={() => onChange({ ...form, components: [...form.components, emptyBomComponentForm()] })} />
-      <PrimaryButton label={props.editing ? "保存修改" : "保存 BOM"} onPress={props.onSubmit} />
+      <SmallButton icon={<Plus color={colors.ink} size={16} />} label={t("forms.addComponent")} onPress={() => onChange({ ...form, components: [...form.components, emptyBomComponentForm()] })} />
+      <PrimaryButton label={props.editing ? t("common.saveChanges") : t("forms.saveBom")} onPress={props.onSubmit} />
     </FormModal>
   );
 }
@@ -1086,6 +1107,53 @@ function roundMoney(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "未知错误";
+function localizeValidationErrors(errors: string[], t: TranslateFn): string[] {
+  return errors.map((message) => localizeValidationMessage(message, t));
+}
+
+function localizeValidationMessage(message: string, t: TranslateFn): string {
+  const lineMatch = message.match(/^第 (\d+) 行(.+)$/);
+  const prefix = lineMatch ? t("validation.orderLinePrefix", { number: Number(lineMatch[1]) }) : "";
+  const normalizedMessage = lineMatch?.[2] ?? message;
+
+  switch (normalizedMessage) {
+    case "客户公司不能为空":
+      return t("validation.companyRequired");
+    case "订单日期不能为空":
+      return t("validation.orderDateRequired");
+    case "至少需要 1 行物料":
+      return t("validation.materialLineRequired");
+    case "物料名称不能为空":
+      return t("validation.materialRequired", { prefix });
+    case "规格型号不能为空":
+      return t("validation.specRequired", { prefix });
+    case "订单数量必须大于 0":
+      return t("validation.orderQuantityRequired", { prefix });
+    case "含税单价必须大于 0":
+      return t("validation.unitPriceRequired", { prefix });
+    case "快递单号不能为空":
+      return t("validation.trackingRequired");
+    case "发货日期不能为空":
+      return t("validation.shipDateRequired");
+    case "至少填写 1 行送货数量":
+      return t("validation.deliveryLineRequired");
+    case "送货数量必须大于 0":
+      return t("validation.deliveryQuantityRequired");
+    case "买入日期不能为空":
+      return t("validation.purchaseDateRequired");
+    case "买入规格不能为空":
+      return t("validation.purchaseSpecRequired");
+    case "买入数量必须大于 0":
+      return t("validation.purchaseQuantityRequired");
+    case "买入单价必须大于 0":
+      return t("validation.purchaseUnitPriceRequired");
+    case "换算比例必须大于 0":
+      return t("validation.conversionRatioRequired");
+    default:
+      return message;
+  }
+}
+
+function errorMessage(error: unknown, t: TranslateFn): string {
+  return error instanceof Error ? error.message : t("common.unknownError");
 }
