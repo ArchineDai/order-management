@@ -24,8 +24,10 @@ import {
   Truck,
   X
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { summarizeLine } from "../../domain/calculations";
 import { InvoiceNeeded, Order, OrderLine, OrderLineStatus } from "../../domain/types";
+import { formatCurrency, translate } from "../../i18n";
 
 export const colors = {
   bg: "#f7f8f4",
@@ -50,6 +52,7 @@ export function WorkspaceScreen({
   onExport: () => void;
   onNewOrder: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <StatusBar barStyle="light-content" backgroundColor={colors.ink} />
@@ -59,8 +62,8 @@ export function WorkspaceScreen({
           <Text style={styles.appSubtitle}>{subtitle}</Text>
         </View>
         <View style={styles.headerActions}>
-          <IconButton icon={<Download color="#f7f8f4" size={19} />} label="导出" onPress={onExport} />
-          <IconButton icon={<Plus color="#f7f8f4" size={20} />} label="新增订单" onPress={onNewOrder} />
+          <IconButton icon={<Download color="#f7f8f4" size={19} />} label={t("common.export")} onPress={onExport} />
+          <IconButton icon={<Plus color="#f7f8f4" size={20} />} label={t("common.newOrder")} onPress={onNewOrder} />
         </View>
       </View>
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
@@ -73,19 +76,20 @@ export function WorkspaceScreen({
 export function SearchField({
   value,
   onChangeText,
-  placeholder = "按物料名称 / 规格型号搜索"
+  placeholder
 }: {
   value: string;
   onChangeText: (value: string) => void;
   placeholder?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.searchBox}>
       <Search color="#21413e" size={18} />
       <TextInput
         value={value}
         onChangeText={onChangeText}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t("common.searchPlaceholder")}
         placeholderTextColor="#7c8b86"
         style={styles.searchInput}
       />
@@ -108,6 +112,7 @@ export function SegmentTabs<T extends string>({
   active: T;
   onChange: (value: T) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.segmentScroll}>
       {options.map((option) => {
@@ -171,6 +176,8 @@ export function OrderCard({
   onComplete: (order: Order) => void;
   onReopen: (order: Order) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -188,11 +195,11 @@ export function OrderCard({
         </Pressable>
       </View>
       <View style={styles.actionRow}>
-        <SmallButton icon={<Truck color={colors.ink} size={16} />} label="送货单" onPress={() => onDelivery(order)} />
+        <SmallButton icon={<Truck color={colors.ink} size={16} />} label={t("orders.deliverySheet")} onPress={() => onDelivery(order)} />
         {order.completedAt ? (
-          <SmallButton icon={<PackageCheck color={colors.ink} size={16} />} label="重新打开" onPress={() => onReopen(order)} />
+          <SmallButton icon={<PackageCheck color={colors.ink} size={16} />} label={t("orders.reopen")} onPress={() => onReopen(order)} />
         ) : (
-          <SmallButton icon={<PackageCheck color={colors.ink} size={16} />} label="标记完成" onPress={() => onComplete(order)} />
+          <SmallButton icon={<PackageCheck color={colors.ink} size={16} />} label={t("orders.markComplete")} onPress={() => onComplete(order)} />
         )}
       </View>
       {order.sourceImage ? <Image source={{ uri: order.sourceImage.dataUrl }} style={styles.attachmentPreview} /> : null}
@@ -206,26 +213,31 @@ export function OrderCard({
                   {line.materialName} / {line.specModel}
                 </Text>
                 <Text style={styles.meta}>
-                  {line.quantity} {line.unit} x ¥{formatMoney(line.taxIncludedUnitPrice)}
+                  {line.quantity} {line.unit} x {formatCurrency(line.taxIncludedUnitPrice)}
                 </Text>
               </View>
               <StatusPill status={summary.status} />
             </View>
             <View style={styles.metricsRow}>
-              <MiniMetric label="已送" value={summary.deliveredQuantity} />
-              <MiniMetric label="欠货" value={summary.backorderQuantity} danger={summary.backorderQuantity > 0} />
-              <MiniMetric label="库存" value={summary.inventoryBalance} danger={summary.inventoryBalance < 0} />
+              <MiniMetric label={t("orders.deliveredMetric")} value={summary.deliveredQuantity} />
+              <MiniMetric label={t("orders.backorderMetric")} value={summary.backorderQuantity} danger={summary.backorderQuantity > 0} />
+              <MiniMetric label={t("orders.inventoryMetric")} value={summary.inventoryBalance} danger={summary.inventoryBalance < 0} />
             </View>
             <View style={styles.actionRow}>
-              <SmallButton icon={<Truck color={colors.ink} size={16} />} label="单行送货" onPress={() => onDelivery(order, line)} />
-              <SmallButton icon={<PackageCheck color={colors.ink} size={16} />} label="买入" onPress={() => onPurchase(order, line)} />
+              <SmallButton icon={<Truck color={colors.ink} size={16} />} label={t("orders.singleLineDelivery")} onPress={() => onDelivery(order, line)} />
+              <SmallButton icon={<PackageCheck color={colors.ink} size={16} />} label={t("orders.purchase")} onPress={() => onPurchase(order, line)} />
             </View>
             {line.deliveries.length ? (
               <View style={styles.recordList}>
                 {line.deliveries.map((delivery) => (
                   <View key={delivery.id} style={styles.recordRow}>
                     <Text style={styles.meta}>
-                      送货 {delivery.shipDate} / {delivery.trackingNo} / {delivery.quantity} {line.unit}
+                      {t("orders.deliveryRecord", {
+                        date: delivery.shipDate,
+                        trackingNo: delivery.trackingNo,
+                        quantity: delivery.quantity,
+                        unit: line.unit
+                      })}
                     </Text>
                     <Pressable onPress={() => onEditDelivery(order, line, delivery.id)} style={styles.inlineEdit}>
                       <Pencil color="#21413e" size={15} />
@@ -239,8 +251,12 @@ export function OrderCard({
                 {line.purchases.map((purchase) => (
                   <View key={purchase.id} style={styles.recordRow}>
                     <Text style={styles.meta}>
-                      买入 {purchase.purchaseDate} / {purchase.purchaseSpec} / ¥{formatMoney(purchase.purchaseTotal)} /{" "}
-                      {invoiceText(purchase.invoiceNeeded)}
+                      {t("orders.purchaseRecord", {
+                        date: purchase.purchaseDate,
+                        spec: purchase.purchaseSpec,
+                        total: formatCurrency(purchase.purchaseTotal),
+                        invoice: invoiceText(purchase.invoiceNeeded)
+                      })}
                     </Text>
                     <Pressable onPress={() => onEditPurchase(order, line, purchase.id)} style={styles.inlineEdit}>
                       <Pencil color="#21413e" size={15} />
@@ -353,7 +369,8 @@ export function MiniMetric({ label, value, danger }: { label: string; value: num
 }
 
 export function StatusPill({ status }: { status: OrderLineStatus }) {
-  const label = status === "pending" ? "待送货" : status === "partial" ? "部分送货" : status === "complete" ? "已送完" : "超发";
+  const { t } = useTranslation();
+  const label = t(`status.${status}`);
   return (
     <View style={[styles.pill, status === "over" && styles.pillDanger, status === "complete" && styles.pillSuccess]}>
       <Text style={styles.pillText}>{label}</Text>
@@ -408,9 +425,9 @@ export function formatMoney(value: number): string {
 }
 
 export function invoiceText(value: InvoiceNeeded) {
-  if (value === "yes") return "已开票";
-  if (value === "no") return "未开票";
-  return "发票未知";
+  if (value === "yes") return translate("invoice.yes");
+  if (value === "no") return translate("invoice.no");
+  return translate("invoice.unknown");
 }
 
 export const styles = StyleSheet.create({
