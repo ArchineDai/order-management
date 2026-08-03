@@ -595,7 +595,7 @@
   </header>
 
   <main id="main-content">
-    <section class="hero" aria-labelledby="company-name-zh company-name-en">
+    <section class="hero" aria-labelledby="company-name-zh" data-label-zh="company-name-zh" data-label-en="company-name-en">
       <div class="hero-grid shell">
         <div>
           <p class="eyebrow" data-lang="zh">公司概览</p>
@@ -612,7 +612,7 @@
       </div>
     </section>
 
-    <section class="intro" aria-labelledby="intro-title-zh intro-title-en">
+    <section class="intro" aria-labelledby="intro-title-zh" data-label-zh="intro-title-zh" data-label-en="intro-title-en">
       <div class="intro-grid shell">
         <p class="section-number" aria-hidden="true">02 / PROFILE</p>
         <div>
@@ -626,19 +626,19 @@
       </div>
     </section>
 
-    <section class="pillars" aria-labelledby="components-title-zh components-title-en">
+    <section class="pillars" aria-labelledby="components-title-zh" data-label-zh="components-title-zh" data-label-en="components-title-en">
       <div class="pillar-grid shell">
         <article class="pillar">
           <span class="pillar-index">01</span>
           <h2 id="components-title-zh" data-lang="zh">电子元器件</h2>
           <h2 id="components-title-en" data-lang="en" hidden>Electronic components</h2>
         </article>
-        <article class="pillar" aria-labelledby="coordination-title-zh coordination-title-en">
+        <article class="pillar" aria-labelledby="coordination-title-zh" data-label-zh="coordination-title-zh" data-label-en="coordination-title-en">
           <span class="pillar-index">02</span>
           <h2 id="coordination-title-zh" data-lang="zh">供应协同</h2>
           <h2 id="coordination-title-en" data-lang="en" hidden>Supply coordination</h2>
         </article>
-        <article class="pillar" aria-labelledby="delivery-title-zh delivery-title-en">
+        <article class="pillar" aria-labelledby="delivery-title-zh" data-label-zh="delivery-title-zh" data-label-en="delivery-title-en">
           <span class="pillar-index">03</span>
           <h2 id="delivery-title-zh" data-lang="zh">稳健交付</h2>
           <h2 id="delivery-title-en" data-lang="en" hidden>Reliable delivery</h2>
@@ -646,7 +646,7 @@
       </div>
     </section>
 
-    <section class="location" aria-labelledby="location-title-zh location-title-en">
+    <section class="location" aria-labelledby="location-title-zh" data-label-zh="location-title-zh" data-label-en="location-title-en">
       <div class="location-grid shell">
         <p class="section-number" aria-hidden="true">04 / SHENZHEN</p>
         <div>
@@ -658,7 +658,7 @@
       </div>
     </section>
 
-    <section class="contact" aria-labelledby="contact-title-zh contact-title-en">
+    <section class="contact" aria-labelledby="contact-title-zh" data-label-zh="contact-title-zh" data-label-en="contact-title-en">
       <a class="contact-link shell" href="mailto:contact@archie-lab.com">
         <span class="contact-label" id="contact-title-zh" data-lang="zh">业务联系</span>
         <span class="contact-label" id="contact-title-en" data-lang="en" hidden>Business enquiries</span>
@@ -679,9 +679,13 @@
   <script>
   const controls = document.querySelectorAll('[data-language]');
   const content = document.querySelectorAll('[data-lang]');
+  const labelledSections = document.querySelectorAll('[data-label-zh][data-label-en]');
   function setLanguage(language) {
     document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en';
     content.forEach((node) => { node.hidden = node.dataset.lang !== language; });
+    labelledSections.forEach((section) => {
+      section.setAttribute('aria-labelledby', section.getAttribute(`data-label-${language}`));
+    });
     controls.forEach((button) => {
       const active = button.dataset.language === language;
       button.setAttribute('aria-pressed', String(active));

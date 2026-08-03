@@ -25,3 +25,22 @@ test('contains accessible language controls and a mobile viewport', () => {
   assert.match(page, /<button[^>]+data-language="zh"/);
   assert.match(page, /<button[^>]+data-language="en"/);
 });
+
+test('updates every labelled section to use only the active-language heading', () => {
+  for (const section of [
+    'company-name',
+    'intro-title',
+    'components-title',
+    'coordination-title',
+    'delivery-title',
+    'location-title',
+    'contact-title',
+  ]) {
+    assert.match(
+      page,
+      new RegExp(`data-label-zh="${section}-zh" data-label-en="${section}-en"`),
+    );
+  }
+  assert.match(page, /document\.querySelectorAll\('\[data-label-zh\]\[data-label-en\]'\)/);
+  assert.match(page, /section\.setAttribute\('aria-labelledby', section\.getAttribute\(`data-label-\$\{language\}`\)\);/);
+});
