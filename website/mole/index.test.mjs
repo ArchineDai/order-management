@@ -26,6 +26,17 @@ test('contains accessible language controls and a mobile viewport', () => {
   assert.match(page, /<button[^>]+data-language="en"/);
 });
 
+test('keeps the English legal identity and contact available without JavaScript', () => {
+  assert.match(
+    page,
+    /<noscript>[\s\S]*Shenzhen Mole Semiconductor Co\., Ltd\.[\s\S]*contact@archie-lab\.com[\s\S]*<\/noscript>/,
+  );
+});
+
+test('gives the contact link a high-contrast visible focus treatment', () => {
+  assert.match(page, /\.contact-link:focus-visible\s*\{[\s\S]*color:\s*var\(--paper\);[\s\S]*background:\s*var\(--ink\);/);
+});
+
 test('updates every labelled section to use only the active-language heading', () => {
   for (const section of [
     'company-name',

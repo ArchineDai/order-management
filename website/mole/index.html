@@ -247,6 +247,24 @@
       letter-spacing: 0.04em;
     }
 
+    .no-script-identity {
+      margin-top: 2rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--line);
+    }
+
+    .no-script-identity p {
+      margin: 0 0 0.4rem;
+      color: var(--paper);
+      font-family: Georgia, 'Noto Serif SC', serif;
+      font-size: clamp(1.15rem, 2vw, 1.5rem);
+    }
+
+    .no-script-identity a {
+      color: var(--gold);
+      font-size: 0.9rem;
+    }
+
     .hero-index {
       position: relative;
       padding: 2rem 0 0 2rem;
@@ -466,6 +484,19 @@
       transform: translateX(5px);
     }
 
+    .contact-link:focus-visible {
+      outline: 3px solid var(--paper);
+      outline-offset: -8px;
+      color: var(--paper);
+      background: var(--ink);
+    }
+
+    .contact-link:focus-visible .contact-arrow {
+      border-color: var(--gold);
+      color: var(--ink);
+      background: var(--gold);
+    }
+
     .site-footer {
       border-top: 1px solid rgba(243, 239, 229, 0.1);
       padding: 2.2rem 0;
@@ -604,6 +635,12 @@
           <h1 id="company-name-en" data-lang="en" hidden>Shenzhen Mole Semiconductor Co., Ltd.</h1>
           <p class="identity-line" data-lang="zh">电子元器件批发与供应链服务</p>
           <p class="identity-line" data-lang="en" hidden>Electronic Components Wholesale &amp; Supply Chain Services</p>
+          <noscript>
+            <aside class="no-script-identity" aria-label="English company identity">
+              <p>Shenzhen Mole Semiconductor Co., Ltd.</p>
+              <a href="mailto:contact@archie-lab.com">contact@archie-lab.com</a>
+            </aside>
+          </noscript>
         </div>
         <div class="hero-index" aria-hidden="true">
           <strong>01</strong>
