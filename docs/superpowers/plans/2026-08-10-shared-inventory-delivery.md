@@ -4,7 +4,7 @@
 
 **Goal:** 支持后续订单直接消耗同规格型号的历史剩余库存。
 
-**Architecture:** 库存继续从采购和送货记录推导。`summarizeOrders` 建立按 `specModel` 聚合的共享库存索引，并用它覆盖订单卡片的库存指标；`summarizeLine` 保留单订单计算语义，避免影响独立调用。
+**Architecture:** 库存继续从采购和送货记录推导。`summarizeOrders` 建立按 `specModel` 聚合的共享库存索引，并用它覆盖订单卡片的库存指标；`summarizeLine` 保留单订单计算语义，避免影响独立调用。订单页面把工作区的共享摘要传给 `OrderCard`，而非让卡片重新按单订单计算。
 
 **Tech Stack:** TypeScript、Vitest、Expo/React Native。
 
@@ -21,6 +21,8 @@
 
 - `src/domain/calculations.ts`：共享库存索引和批量摘要投影。
 - `src/domain/calculations.test.ts`：跨订单库存出货回归测试。
+- `src/features/orders/components.tsx`：按订单行 ID 使用工作区提供的共享摘要渲染订单卡片。
+- `src/features/orders/screens.tsx`：将工作区摘要传入订单卡片。
 
 ### Task 1: 共享库存领域计算
 
@@ -95,7 +97,39 @@ Run: `git add src/domain/calculations.ts src/domain/calculations.test.ts && git 
 
 Expected: 新实现创建为独立提交。
 
-### Task 2: Android 测试包交付
+### Task 2: 订单卡片共享库存展示
+
+**Files:**
+- Modify: `src/features/orders/components.tsx`
+- Modify: `src/features/orders/screens.tsx`
+- Test: `pnpm typecheck`
+
+**Interfaces:**
+- Consumes: `OrderCard` 的 `summaries: LineSummary[]` 属性。
+- Produces: 每个订单行根据匹配的 `lineId` 显示工作区共享库存值。
+
+- [ ] **Step 1: 让订单卡片接收摘要**
+
+```ts
+export function OrderCard({ order, summaries, ...actions }: OrderCardProps) {
+  const summariesByLineId = new Map(summaries.map((summary) => [summary.lineId, summary]));
+  // 每条订单行通过 summariesByLineId.get(line.id) 取得摘要
+}
+```
+
+- [ ] **Step 2: 从页面传入工作区摘要**
+
+```tsx
+<OrderCard key={order.id} order={order} summaries={workspace.summaries} {...orderCardActions(workspace)} />
+```
+
+- [ ] **Step 3: 类型检查**
+
+Run: `pnpm typecheck`
+
+Expected: PASS，订单卡片不再使用 `summarizeLine` 的订单内库存值。
+
+### Task 3: Android 测试包交付
 
 **Files:**
 - Modify: 无源代码修改。
