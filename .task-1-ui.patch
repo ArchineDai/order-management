@@ -1,0 +1,38 @@
+diff --git a/src/features/orders/screens.tsx b/src/features/orders/screens.tsx
+--- a/src/features/orders/screens.tsx
++++ b/src/features/orders/screens.tsx
+@@ -28,0 +29,1 @@
++import { formatCurrency } from "../../i18n";
+@@ -69,1 +70,1 @@
+-        <StatTile label="毛利" value={`¥${formatMoney(workspace.profit.grossProfit)}`} tone="blue" />
++        <StatTile label="毛利" value={formatCurrency(workspace.profit.grossProfit)} tone="blue" />
+@@ -236,1 +237,1 @@
+-        <StatTile label="销售额" value={`¥${formatMoney(workspace.profit.salesTotal)}`} tone="green" />
++        <StatTile label="销售额" value={formatCurrency(workspace.profit.salesTotal)} tone="green" />
+@@ -237,1 +238,1 @@
+-        <StatTile label="采购成本" value={`¥${formatMoney(workspace.profit.purchaseCost)}`} tone="yellow" />
++        <StatTile label="采购成本" value={formatCurrency(workspace.profit.purchaseCost)} tone="yellow" />
+@@ -238,1 +239,1 @@
+-        <StatTile label="总利润" value={`¥${formatMoney(workspace.profit.totalProfit)}`} tone="blue" />
++        <StatTile label="总利润" value={formatCurrency(workspace.profit.totalProfit)} tone="blue" />
+@@ -240,1 +241,1 @@
+-        <StatTile label="本月利润" value={`¥${formatMoney(workspace.profit.currentMonthProfit)}`} tone="red" />
++        <StatTile label="本月利润" value={formatCurrency(workspace.profit.currentMonthProfit)} tone="red" />
+@@ -259,1 +260,1 @@
+-              毛利 ¥{formatMoney(summary.grossProfit)}，毛利率 {Math.round(summary.grossMarginRate * 1000) / 10}%
++              毛利 {formatCurrency(summary.grossProfit)}，毛利率 {Math.round(summary.grossMarginRate * 1000) / 10}%
+@@ -263,1 +264,1 @@
+-              <Text style={styles.strong}>¥{formatMoney(summary.taxIncludedTotal)}</Text>
++              <Text style={styles.strong}>{formatCurrency(summary.taxIncludedTotal)}</Text>
+@@ -267,1 +268,1 @@
+-              <Text style={styles.strong}>¥{formatMoney(summary.purchaseTotal)}</Text>
++              <Text style={styles.strong}>{formatCurrency(summary.purchaseTotal)}</Text>
+@@ -301,1 +302,1 @@
+-        <Text style={styles.strong}>¥{formatMoney(item.purchase.purchaseTotal)}</Text>
++        <Text style={styles.strong}>{formatCurrency(item.purchase.purchaseTotal)}</Text>
+@@ -358,1 +359,1 @@
+-        <Text style={styles.strong}>¥{formatMoney(item.finishedPurchaseCost)}</Text>
++        <Text style={styles.strong}>{formatCurrency(item.finishedPurchaseCost)}</Text>
+@@ -398,1 +399,1 @@
+-              <Text style={styles.strong}>¥{formatMoney(row.value)}</Text>
++              <Text style={styles.strong}>{formatCurrency(row.value)}</Text>
