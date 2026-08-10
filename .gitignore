@@ -1,6 +1,7 @@
 node_modules/
 .expo/
 .superpowers/
+.worktrees/
 dist/
 dist-*/
 coverage/
