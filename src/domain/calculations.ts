@@ -69,7 +69,26 @@ export function summarizeLine(order: Order, line: OrderLine): LineSummary {
 }
 
 export function summarizeOrders(orders: Order[]): LineSummary[] {
-  return orders.flatMap((order) => order.lines.map((line) => summarizeLine(order, line)));
+  const inventoryBalances = inventoryBalanceBySpec(orders);
+  return orders.flatMap((order) =>
+    order.lines.map((line) => ({
+      ...summarizeLine(order, line),
+      inventoryBalance: inventoryBalances.get(line.specModel) ?? 0
+    }))
+  );
+}
+
+function inventoryBalanceBySpec(orders: Order[]): Map<string, number> {
+  const balances = new Map<string, number>();
+
+  for (const order of orders) {
+    for (const line of order.lines) {
+      const balance = (balances.get(line.specModel) ?? 0) + purchasedInOrderUnit(line) - deliveredQuantity(line);
+      balances.set(line.specModel, quantity(balance));
+    }
+  }
+
+  return balances;
 }
 
 export function buildInventoryRows(orders: Order[]): InventoryRow[] {

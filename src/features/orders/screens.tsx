@@ -448,6 +448,7 @@ function TrendCard({ title, rows }: { title: string; rows: Array<{ month: string
 
 function orderCardActions(workspace: ReturnType<typeof useOrderWorkspace>) {
   return {
+    summaries: workspace.summaries,
     onEditOrder: workspace.openEditOrder,
     onDelivery: workspace.openDelivery,
     onEditDelivery: workspace.openEditDelivery,

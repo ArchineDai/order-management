@@ -26,7 +26,7 @@ import {
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { summarizeLine } from "../../domain/calculations";
-import { InvoiceNeeded, Order, OrderLine, OrderLineStatus } from "../../domain/types";
+import { InvoiceNeeded, LineSummary, Order, OrderLine, OrderLineStatus } from "../../domain/types";
 import { formatCurrency, translate } from "../../i18n";
 
 export const colors = {
@@ -157,6 +157,7 @@ export function ImportStrip({
 
 export function OrderCard({
   order,
+  summaries,
   onEditOrder,
   onDelivery,
   onEditDelivery,
@@ -167,6 +168,7 @@ export function OrderCard({
   onReopen
 }: {
   order: Order;
+  summaries: LineSummary[];
   onEditOrder: (order: Order) => void;
   onDelivery: (order: Order, line?: OrderLine) => void;
   onEditDelivery: (order: Order, line: OrderLine, deliveryId: string) => void;
@@ -177,6 +179,7 @@ export function OrderCard({
   onReopen: (order: Order) => void;
 }) {
   const { t } = useTranslation();
+  const summariesByLineId = new Map(summaries.map((summary) => [summary.lineId, summary]));
 
   return (
     <View style={styles.card}>
@@ -204,7 +207,7 @@ export function OrderCard({
       </View>
       {order.sourceImage ? <Image source={{ uri: order.sourceImage.dataUrl }} style={styles.attachmentPreview} /> : null}
       {order.lines.map((line) => {
-        const summary = summarizeLine(order, line);
+        const summary = summariesByLineId.get(line.id) ?? summarizeLine(order, line);
         return (
           <View key={line.id} style={styles.lineBlock}>
             <View style={styles.lineTop}>

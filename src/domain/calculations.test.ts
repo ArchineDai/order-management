@@ -5,7 +5,8 @@ import {
   calculateProfitSummary,
   detectDuplicateOrder,
   searchHistory,
-  summarizeLine
+  summarizeLine,
+  summarizeOrders
 } from "./calculations";
 import { createSampleOrder, createSampleOrders } from "./testFixtures";
 
@@ -45,6 +46,40 @@ describe("order calculations", () => {
       purchasedInOrderUnit: 200,
       inventoryBalance: 80
     });
+  });
+
+  it("uses remaining inventory from an earlier order when a later order delivers the same specification", () => {
+    const firstOrder = createSampleOrder({
+      specModel: "AB-12",
+      lineQuantity: 50,
+      deliveries: [20],
+      purchases: [{ quantity: 50, total: 500, ratio: 1 }]
+    });
+    const laterOrder = createSampleOrder({
+      specModel: "AB-12",
+      lineQuantity: 30,
+      deliveries: [30],
+      purchases: []
+    });
+
+    const laterSummary = summarizeOrders([firstOrder, laterOrder]).find((summary) => summary.orderId === laterOrder.id);
+
+    expect(laterSummary).toMatchObject({
+      deliveredQuantity: 30,
+      backorderQuantity: 0,
+      inventoryBalance: 0
+    });
+  });
+
+  it("keeps a negative shared balance when deliveries exceed all shared inventory", () => {
+    const order = createSampleOrder({
+      specModel: "AB-12",
+      lineQuantity: 60,
+      deliveries: [60],
+      purchases: [{ quantity: 50, total: 500, ratio: 1 }]
+    });
+
+    expect(summarizeOrders([order])[0].inventoryBalance).toBe(-10);
   });
 
   it("finds duplicate order lines by company, date, specification and quantity", () => {
