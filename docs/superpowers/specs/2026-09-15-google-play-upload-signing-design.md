@@ -1,36 +1,36 @@
-# Google Play Upload Signing Design
+# Google Play 上传签名设计
 
-## Goal
+## 目标
 
-Prepare a signed Android App Bundle suitable for the first Google Play production release of Order Ledger without changing application behavior or committing private signing material.
+为“订单台账”首个 Google Play 正式版本准备可上传的已签名 Android App Bundle，不改变应用功能，也不将任何私钥材料提交到仓库。
 
-## Context
+## 当前情况
 
-The current release bundle is version `1.2.0` with `versionCode 1`, but the generated Android project signs its release build with `android/app/debug.keystore`. That key is intended for development and must not become the permanent upload identity for Google Play.
+现有发布包版本为 `1.2.0`、`versionCode 1`，但生成的 Android 工程会使用 `android/app/debug.keystore` 对发布构建签名。该密钥只应用于开发阶段，不能成为 Google Play 长期使用的上传凭据。
 
-## Options Considered
+## 备选方案
 
-1. Upload the existing AAB. This is fastest, but permanently couples the application to the development key and is rejected.
-2. Generate a dedicated local upload key and use it only for release builds. This keeps the private key local, enables a clean Google Play App Signing setup, and is selected.
-3. Configure a cloud build with managed credentials. This is viable later but requires a separate Expo account and credential workflow not currently present in the repository.
+1. 直接上传现有 AAB：速度最快，但会将应用永久绑定到开发密钥，不采用。
+2. 在本机生成独立上传密钥，并且仅用于正式构建：私钥保留在本机，可干净地接入 Google Play 应用签名，采用此方案。
+3. 配置云端构建并托管凭据：后续可采用，但目前仓库尚未配置 Expo 账号和凭据流程。
 
-## Design
+## 方案设计
 
-- Create one 4096-bit RSA upload key at `android/app/order-ledger-upload.keystore` with a 30-year validity period.
-- Store the keystore location, alias, and passwords in `android/keystore.properties`; both files remain ignored by Git.
-- Add a `release` signing configuration in `android/app/build.gradle` that loads `keystore.properties` and fails immediately if the expected key material is absent.
-- Sign only the Gradle `release` build with the new upload key. Debug builds remain unchanged.
-- Rebuild `app-release.aab`, verify its signature and certificate fingerprint, and retain the fingerprint for Google Play upload-key registration or recovery.
+- 在 `android/app/order-ledger-upload.keystore` 生成一套 4096 位 RSA 上传密钥，有效期 30 年。
+- 将密钥路径、别名和口令存入 `android/keystore.properties`；两个文件均保持 Git 忽略，不会提交。
+- 在 `android/app/build.gradle` 中新增 `release` 签名配置，加载 `keystore.properties`；如缺少密钥材料，构建应立即报出明确错误。
+- 只有 Gradle 的 `release` 构建使用新上传密钥；调试构建保持原状。
+- 重新生成 `app-release.aab`，校验签名和证书指纹，并保留该指纹，用于 Google Play 上传密钥注册或后续恢复。
 
-## Error Handling
+## 异常处理
 
-- The signing configuration must stop the release build with a direct error when `keystore.properties` or its required fields are missing.
-- The generated private key and password file must not be staged or committed.
-- If a Google Play upload-key certificate was already registered for this package, do not upload the newly signed bundle; request an upload-key reset instead.
+- 如果缺少 `keystore.properties` 或其必填字段，签名配置必须中止发布构建并给出明确提示。
+- 不暂存、不提交生成的私钥和口令文件。
+- 如果此包名已在 Google Play 注册上传密钥，则不能上传由新密钥签名的 AAB，应先申请重置上传密钥。
 
-## Verification
+## 验证方式
 
-- `keytool -list` reports the expected alias and a 4096-bit RSA certificate.
-- `./gradlew bundleRelease` succeeds.
-- `jarsigner -verify` validates the generated AAB.
-- The signer fingerprint differs from the existing development-key fingerprint.
+- `keytool -list` 应显示预期别名和 4096 位 RSA 证书。
+- `./gradlew bundleRelease` 应构建成功。
+- `jarsigner -verify` 应验证新生成的 AAB 成功。
+- 新签名证书指纹应不同于现有开发密钥的指纹。
