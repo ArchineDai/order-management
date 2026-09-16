@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="订单台账隐私政策">
+  <title>隐私政策｜订单台账</title>
+  <style>
+    :root {
+      --ink: #0b2d2c;
+      --ink-soft: #164340;
+      --paper: #f7f4ec;
+      --white: #ffffff;
+      --gold: #c8913b;
+      --line: #d8dfd8;
+      --muted: #546966;
+      --max: 760px;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--paper); }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Noto Serif SC", "Songti SC", "STSong", serif;
+      line-height: 1.8;
+    }
+
+    .shell { width: min(calc(100% - 40px), var(--max)); margin: 0 auto; }
+    .site-header { background: var(--ink); color: var(--paper); }
+    .nav { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { color: inherit; text-decoration: none; font-family: Georgia, "Times New Roman", serif; letter-spacing: .045em; font-weight: 700; }
+    .language-switcher { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid rgba(255,255,255,.28); border-radius: 999px; }
+    .language-switcher button {
+      border: 0;
+      border-radius: 999px;
+      padding: 6px 11px;
+      color: var(--paper);
+      background: transparent;
+      font: inherit;
+      cursor: pointer;
+    }
+    .language-switcher button[aria-pressed="true"] { color: var(--ink); background: var(--paper); }
+    .language-switcher button:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+
+    main { padding: 56px 0 80px; }
+    .eyebrow { margin: 0 0 12px; color: var(--gold); font: 700 .78rem/1.2 Arial, sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+    h1, h2 { font-weight: 700; line-height: 1.25; }
+    h1 { margin: 0; font-size: clamp(2rem, 6vw, 3.35rem); letter-spacing: -.03em; }
+    .lead { margin: 20px 0 0; max-width: 42em; color: var(--muted); font-size: 1.06rem; }
+    .meta { margin: 22px 0 38px; color: var(--muted); font-family: Arial, sans-serif; font-size: .88rem; }
+    .policy { overflow: hidden; background: var(--white); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 14px 38px rgba(11,45,44,.08); }
+    .policy-section { padding: 28px 28px 30px; border-top: 1px solid var(--line); }
+    .policy-section:first-child { border-top: 0; }
+    h2 { margin: 0 0 12px; font-size: 1.17rem; }
+    p { margin: 0 0 14px; }
+    p:last-child { margin-bottom: 0; }
+    ul { margin: 0; padding-left: 1.25em; }
+    a { color: var(--ink-soft); text-underline-offset: 3px; }
+    .notice { margin-top: 28px; padding: 18px 20px; border-left: 4px solid var(--gold); background: #f1eadb; color: #394845; font-size: .94rem; }
+    .site-footer { border-top: 1px solid var(--line); padding: 28px 0 44px; color: var(--muted); font: .82rem/1.6 Arial, sans-serif; }
+
+    @media (max-width: 560px) {
+      .shell { width: min(calc(100% - 28px), var(--max)); }
+      .nav { min-height: 66px; }
+      main { padding: 40px 0 56px; }
+      .policy-section { padding: 23px 20px 25px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav shell" aria-label="Site navigation">
+      <a class="brand" href="/" aria-label="Mole Semiconductor">Mole Semiconductor</a>
+      <div class="language-switcher" role="group" aria-label="Language">
+        <button type="button" data-language="zh" aria-pressed="true">中文</button>
+        <button type="button" data-language="en" aria-pressed="false">EN</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <p class="eyebrow" data-lang="zh">订单台账</p>
+    <p class="eyebrow" data-lang="en" hidden>Order Ledger</p>
+    <h1 data-lang="zh">隐私政策</h1>
+    <h1 data-lang="en" hidden>Privacy Policy for Order Ledger</h1>
+    <p class="lead" data-lang="zh">本政策说明“订单台账”如何处理您在应用内创建的订单、采购、库存、BOM 和附件资料。</p>
+    <p class="lead" data-lang="en" hidden>This policy explains how Order Ledger handles the orders, purchases, inventory, BOM records, and attachments you create in the app.</p>
+    <p class="meta" data-lang="zh">最后更新：2026 年 9 月 16 日</p>
+    <p class="meta" data-lang="en" hidden>Last updated: September 16, 2026</p>
+
+    <article class="policy">
+      <section class="policy-section" data-lang="zh">
+        <h2>1. 适用范围</h2>
+        <p>本政策适用于“订单台账”移动应用。应用用于记录和管理业务订单、采购、库存、BOM 和利润信息。</p>
+      </section>
+      <section class="policy-section" data-lang="zh">
+        <h2>2. 本地数据存储</h2>
+        <p>订单、采购、库存、BOM 和用户主动添加的附件资料保存在您的设备本地。我们不会自动将这些资料传输给开发者。</p>
+        <p>应用不提供账户注册、登录或云端同步服务。您可以在设备上编辑或删除本地记录。</p>
+      </section>
+      <section class="policy-section" data-lang="zh">
+        <h2>3. 设备权限</h2>
+        <p>相机、相册和文件权限仅在您主动拍摄、选择凭证或导入资料时使用。应用不会在您未主动操作时访问这些内容。</p>
+      </section>
+      <section class="policy-section" data-lang="zh">
+        <h2>4. 导出与分享</h2>
+        <p>当您主动导出 CSV 或使用系统分享功能时，相关文件会交由您选择的系统功能或第三方应用处理。请您根据自身需要决定接收方和共享范围。</p>
+      </section>
+      <section class="policy-section" data-lang="zh">
+        <h2>5. 广告、共享和儿童</h2>
+        <p>应用不展示广告，也不会出售或共享您的数据。应用面向业务管理场景设计，不面向儿童。</p>
+      </section>
+      <section class="policy-section" data-lang="zh">
+        <h2>6. 联系我们</h2>
+        <p>如对本政策有疑问，请通过 <a href="mailto:contact@archie-lab.com">contact@archie-lab.com</a> 联系我们。</p>
+      </section>
+
+      <section class="policy-section" data-lang="en" hidden>
+        <h2>1. Scope</h2>
+        <p>This policy applies to the Order Ledger mobile app. The app helps users record and manage business orders, purchases, inventory, BOM records, and profit information.</p>
+      </section>
+      <section class="policy-section" data-lang="en" hidden>
+        <h2>2. Local data storage</h2>
+        <p>Orders, purchases, inventory, BOM records, and attachments you add are stored locally on your device. We do not automatically transmit this information to the developer.</p>
+        <p>The app does not provide account registration, sign-in, or cloud synchronization. You can edit or delete local records on your device.</p>
+      </section>
+      <section class="policy-section" data-lang="en" hidden>
+        <h2>3. Device permissions</h2>
+        <p>Camera, photo-library, and file permissions are used only when you choose to take a photo, select a document, or import information. The app does not access this content without your action.</p>
+      </section>
+      <section class="policy-section" data-lang="en" hidden>
+        <h2>4. Exporting and sharing</h2>
+        <p>When you choose to export CSV files or use system sharing, the relevant files are handled by the system feature or third-party app you select. You decide the recipient and scope of each share.</p>
+      </section>
+      <section class="policy-section" data-lang="en" hidden>
+        <h2>5. Advertising, sharing, and children</h2>
+        <p>The app does not display advertising and does not sell or share your data. It is designed for business management and is not directed to children.</p>
+      </section>
+      <section class="policy-section" data-lang="en" hidden>
+        <h2>6. Contact us</h2>
+        <p>If you have questions about this policy, contact us at <a href="mailto:contact@archie-lab.com">contact@archie-lab.com</a>.</p>
+      </section>
+    </article>
+
+    <aside class="notice" data-lang="zh">本政策不限制您依照适用法律享有的权利。如应用功能或数据处理方式发生重大变化，我们会更新本页面的日期和内容。</aside>
+    <aside class="notice" data-lang="en" hidden>This policy does not limit rights you may have under applicable law. If the app's functions or data practices materially change, we will update this page and its date.</aside>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell">© Mole Semiconductor · <a href="mailto:contact@archie-lab.com">contact@archie-lab.com</a></div>
+  </footer>
+
+  <script>
+    const controls = document.querySelectorAll('[data-language]');
+    const content = document.querySelectorAll('[data-lang]');
+    function setLanguage(language) {
+      document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en';
+      content.forEach((node) => { node.hidden = node.dataset.lang !== language; });
+      controls.forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset.language === language));
+      });
+    }
+    controls.forEach((button) => button.addEventListener('click', () => setLanguage(button.dataset.language)));
+    setLanguage('zh');
+  </script>
+</body>
+</html>
