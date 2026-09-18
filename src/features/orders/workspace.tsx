@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { Alert, Image, Pressable, Text, View } from "react-native";
+import { Alert, Image, Platform, Pressable, Text, View } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
@@ -396,13 +396,15 @@ export function OrderWorkspaceProvider({ children }: { children: React.ReactNode
   };
 
   const pickImage = async (source: "camera" | "library") => {
-    const permission =
-      source === "camera"
+    // Android's system photo picker grants access to the selected image without library permission.
+    if (source === "camera" || Platform.OS !== "android") {
+      const permission = source === "camera"
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(t("alerts.noPermission"), source === "camera" ? t("alerts.cameraPermissionRequired") : t("alerts.libraryPermissionRequired"));
-      return undefined;
+      if (!permission.granted) {
+        Alert.alert(t("alerts.noPermission"), source === "camera" ? t("alerts.cameraPermissionRequired") : t("alerts.libraryPermissionRequired"));
+        return undefined;
+      }
     }
 
     const result =
